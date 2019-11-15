@@ -6,7 +6,7 @@ use rpassword::read_password;
 use std::error::Error;
 use core::fmt;
 use std::fmt::Debug;
-use nix::unistd::{fork, ForkResult, setuid, setgid};
+use nix::unistd::{fork, ForkResult, setuid, setgid, Uid, Gid};
 use std::process::Command;
 use pam_sys::raw::pam_get_user;
 use users::get_user_by_name;
@@ -126,8 +126,8 @@ fn main() -> io::Result<()>{
             println!("Current directory: {}", std::env::var("PWD").unwrap());
             let user= get_user_by_name(&user_info.username).unwrap();
 
-            setuid(user.uid().into());
-            setgid(user.primary_group_id().into());
+            setuid(Uid::from_raw(user.uid()));
+            setgid(Gid::from_raw(user.primary_group_id()));
 
             //exec /bin/bash --login .xinitrc
             let mut child = Command::new("whoami").spawn().expect("failed to execute child");

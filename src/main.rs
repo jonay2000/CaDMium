@@ -116,9 +116,10 @@ fn main() -> io::Result<()>{
     match fork() {
         Ok(ForkResult::Child) => {
             println!("Logged in as: {}", std::env::var("USER").unwrap());
-            println!("Logged in as: {}", std::env::var("PWD").unwrap());
+            println!("Current directory: {}", std::env::var("PWD").unwrap());
 
-            let mut child = Command::new("exec /bin/bash --login .xinitrc").spawn().expect("failed to execute child");
+            //exec /bin/bash --login .xinitrc
+            let mut child = Command::new("startx").spawn().expect("failed to execute child");
 
             child.wait().expect("failed to wait on child");
         }

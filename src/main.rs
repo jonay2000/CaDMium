@@ -119,7 +119,7 @@ fn main() -> io::Result<()>{
             println!("Current directory: {}", std::env::var("PWD").unwrap());
 
             //exec /bin/bash --login .xinitrc
-            let mut child = Command::new("startx").spawn().expect("failed to execute child");
+            let mut child = Command::new("whoami").spawn().expect("failed to execute child");
 
             child.wait().expect("failed to wait on child");
         }

@@ -1,12 +1,15 @@
 [Unit]
 Description=CaDMium
-After=systemd-user-sessions.service
-Conflicts=getty@tty1.service
-After=systemd-user-sessions.service getty@tty1.service plymouth-quit.service systemd-logind.service
-
+After=systemd-user-sessions.service plymouth-quit-wait.service
+After=getty@tty2.service
 
 [Service]
 ExecStart=/usr/bin/cadmium
+StandardInput=tty
+TTYPath=/dev/tty2
+TTYReset=yes
+TTYVHangup=yes
+Type=idle
 
 [Install]
 Alias=display-manager.service

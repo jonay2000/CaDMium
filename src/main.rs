@@ -126,6 +126,8 @@ fn main() -> io::Result<()>{
             println!("Current directory: {}", std::env::var("PWD").unwrap());
             let user= get_user_by_name(&user_info.username).unwrap();
 
+            println!("user: {:?}", user);
+
             setuid(Uid::from_raw(user.uid()));
             setgid(Gid::from_raw(user.primary_group_id()));
 

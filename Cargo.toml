@@ -1,5 +1,5 @@
 [package]
-name = "CaDMium"
+name = "cadmium"
 version = "0.1.0"
 authors = ["Victor Roest <victor@xirion.net>"]
 edition = "2018"
@@ -10,3 +10,4 @@ rpassword="4.0.1"
 pam="0.7.0"
 pam-sys="0.5.6"
 nix = "0.15.0"
+users="0.9.1"

@@ -6,8 +6,10 @@ use rpassword::read_password;
 use std::error::Error;
 use core::fmt;
 use std::fmt::Debug;
-use nix::unistd::{fork, ForkResult};
+use nix::unistd::{fork, ForkResult, setuid, setgid};
 use std::process::Command;
+use pam_sys::raw::pam_get_user;
+use users::get_user_by_name;
 
 #[derive(Debug)]
 enum ErrorKind {
@@ -41,21 +43,19 @@ fn simple_get_credentials() -> io::Result<UserInfo> {
     })
 }
 
-fn authenticate() -> Result<LoginManager, ErrorKind>{
+fn authenticate() -> Result<UserInfo, ErrorKind>{
     let logind_manager = LoginManager::new().expect("Could not get logind-manager");
 
     let mut authenticator = Authenticator::with_password("system-auth")
         .expect("Failed to init PAM client.");
 
     // block where we inhibit suspend
-    {
+    let login_info= {
         let suspend_lock = logind_manager.connect().inhibit_suspend("LighterDM", "login").map_err(|_| ErrorKind::InhibitationError)?;
 
         let login_info = simple_get_credentials().map_err(|_| ErrorKind::IoError)?;
 
-        authenticator.get_handler().set_credentials(login_info.username, login_info.password);
-
-
+        authenticator.get_handler().set_credentials(login_info.username.clone(), login_info.password);
 
         match authenticator.authenticate() {
             Err(e)=>  {
@@ -93,30 +93,41 @@ fn authenticate() -> Result<LoginManager, ErrorKind>{
             }
             Ok(_) => ()
         };
-    }
+        
+        UserInfo{
+            username: login_info.username,
+            password: String::new()
+        }
+    };
 
     authenticator.open_session().map_err(|_| ErrorKind::SessionError)?;
 
-
-    Ok(logind_manager)
+    Ok(login_info)
 }
 
 fn main() -> io::Result<()>{
 
-    let mut auth: Result<LoginManager, ErrorKind>;
+    let mut auth: Result<UserInfo, ErrorKind>;
 
     loop {
         auth = authenticate();
 
-        if let Ok(manager) = auth {
+        if auth.is_ok() {
             break;
         }
     }
+
+    // Safe because we check is_ok()
+    let user_info = auth.unwrap();
 
     match fork() {
         Ok(ForkResult::Child) => {
             println!("Logged in as: {}", std::env::var("USER").unwrap());
             println!("Current directory: {}", std::env::var("PWD").unwrap());
+            let user= get_user_by_name(&user_info.username).unwrap();
+
+            setuid(user.uid().into());
+            setgid(user.primary_group_id().into());
 
             //exec /bin/bash --login .xinitrc
             let mut child = Command::new("whoami").spawn().expect("failed to execute child");

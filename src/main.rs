@@ -55,7 +55,7 @@ fn main() -> io::Result<()>{
             println!("user id: {:?}", user.uid());
             println!("primary group: {:?}", user.primary_group_id());
 
-            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None);
+//            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None);
 
             initgroups(
                 &CString::new(user_info.username).unwrap(),

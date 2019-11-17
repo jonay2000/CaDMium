@@ -6,15 +6,12 @@ use users::get_user_by_name;
 use std::ffi::CString;
 use std::env::set_current_dir;
 use crate::login::authenticate;
+use crate::x::start_x;
 
 pub mod askpass;
 pub mod error;
 pub mod login;
-
-
-fn start_x() {
-
-}
+pub mod x;
 
 fn main() -> io::Result<()>{
 

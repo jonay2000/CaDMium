@@ -170,7 +170,7 @@ fn main() -> io::Result<()>{
             set_current_dir(homedir).expect("Couldn't set home directory");
 
             // startx -- :0
-            let mut child = Command::new("startx").arg("-- :0 vt7").spawn()
+            let mut child = Command::new("startx").arg("--").arg(":0").arg("vt7").spawn()
                 .expect("failed to execute child");
 
             child.wait().expect("failed to wait on child");

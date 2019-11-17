@@ -56,12 +56,13 @@ fn main() -> io::Result<()>{
             println!("primary group: {:?}", user.primary_group_id());
 
 
-            setgid(Gid::from_raw(user.primary_group_id())).expect("Could not set GID for your user");
 
             initgroups(
                 &CString::new(user_info.username).unwrap(),
                 Gid::from_raw(user.primary_group_id())
             ).expect("Could not assign groups to your user");
+
+            setgid(Gid::from_raw(user.primary_group_id())).expect("Could not set GID for your user");
 
             // No Root :(
             setuid(Uid::from_raw(user.uid())).expect("Could not set UID for your user");

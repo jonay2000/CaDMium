@@ -74,9 +74,8 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
 
     xauth(&display, home)?;
 
-
     let xorg_process = Command::new("/usr/bin/X")
-        .args(&[&display, &format!("{}", tty)])
+        .args(&[&display, &format!("vt{}", tty)])
         .spawn().map_err(|_| XError::XStartError)?;
 
     // Wait for the process to start running

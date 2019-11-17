@@ -74,8 +74,6 @@ fn main() -> io::Result<()>{
                 Path::new(&homedir),
                 de
             ).map_err(|e| ErrorKind::XError(e)).expect("Couldn't start X");
-
-
         }
         _ => {
             loop {}

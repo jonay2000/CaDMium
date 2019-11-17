@@ -75,7 +75,7 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
         .args(&[&display, &format!("{}", tty)])
         .output().map_err(|_| XError::XStartError)?;
 
-    let c = Connection::connect(Some(&display)).map_err(|_| XError::XCBConnectionError)?;
+    let c = Connection::connect(None).map_err(|_| XError::XCBConnectionError)?;
 
     let mut de_process = Command::new(env::var("SHELL").map_err(|_| XError::NoSHELLError)?)
         .arg("-c").arg(include_str!("../res/xsetup.sh")).arg(de).spawn().map_err(|_| XError::DEStartError)?;

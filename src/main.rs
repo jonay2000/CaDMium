@@ -163,9 +163,6 @@ fn main() -> io::Result<()>{
                 Gid::from_raw(user.primary_group_id())
             ).expect("Could not assign groups to your user");
 
-            // Get ownership of the TTY
-            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None).unwrap();
-
             // No Root :(
             setuid(Uid::from_raw(user.uid())).expect("Could not set UID for your user");
 

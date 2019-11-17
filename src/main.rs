@@ -6,7 +6,7 @@ use rpassword::read_password;
 use std::error::Error;
 use core::fmt;
 use std::fmt::Debug;
-use nix::unistd::{fork, ForkResult, setuid, setgid, Uid, Gid, initgroups};
+use nix::unistd::{fork, ForkResult, setuid, setgid, Uid, Gid, initgroups, chown};
 use std::process::Command;
 use users::get_user_by_name;
 use std::io::Write;
@@ -163,6 +163,9 @@ fn main() -> io::Result<()>{
                 &CString::new(user_info.username).unwrap(),
                 Gid::from_raw(user.primary_group_id())
             ).expect("Could not assign groups to your user");
+
+            // Get ownership of the TTY
+            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None);
 
             // No Root :(
             setuid(Uid::from_raw(user.uid())).expect("Could not set UID for your user");

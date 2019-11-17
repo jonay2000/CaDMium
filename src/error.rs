@@ -2,6 +2,7 @@ use core::fmt;
 use std::error::Error;
 use crate::askpass::AskPassError;
 use fmt::Debug;
+use crate::x::XError;
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -9,7 +10,8 @@ pub enum ErrorKind {
     IoError,
     AuthenticationError,
     SessionError,
-    AskPassError(AskPassError)
+    AskPassError(AskPassError),
+    XError(XError),
 
 }
 impl Error for ErrorKind {}

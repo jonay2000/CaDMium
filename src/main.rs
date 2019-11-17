@@ -1,20 +1,17 @@
 use pam::Authenticator;
-use pam_sys::{PamReturnCode, getenv};
+use pam_sys::PamReturnCode;
 use std::io;
 use logind_dbus::LoginManager;
 use rpassword::read_password;
 use std::error::Error;
 use core::fmt;
 use std::fmt::Debug;
-use nix::unistd::{fork, ForkResult, setuid, setgid, Uid, Gid, chdir, initgroups};
+use nix::unistd::{fork, ForkResult, setuid, setgid, Uid, Gid, initgroups};
 use std::process::Command;
-use pam_sys::raw::pam_get_user;
 use users::get_user_by_name;
 use std::io::Write;
-use std::thread::sleep;
-use std::time::Duration;
 use std::env::set_current_dir;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 
 #[derive(Debug)]
 enum ErrorKind {
@@ -66,7 +63,7 @@ fn authenticate() -> Result<UserInfo, ErrorKind>{
 
     // block where we inhibit suspend
     let login_info= {
-        let suspend_lock = logind_manager.connect().inhibit_suspend("LighterDM", "login").map_err(|_| ErrorKind::InhibitationError)?;
+        let _suspend_lock = logind_manager.connect().inhibit_suspend("LighterDM", "login").map_err(|_| ErrorKind::InhibitationError)?;
 
         let login_info = simple_get_credentials().map_err(|_| ErrorKind::IoError)?;
 
@@ -122,7 +119,12 @@ fn authenticate() -> Result<UserInfo, ErrorKind>{
 
 fn main() -> io::Result<()>{
 
-    chvt::chvt(2);
+    match chvt::chvt(2) {
+        Ok(_) => (),
+        Err(_) => {
+            println!("Could not change console");
+        }
+    };
 
     let mut auth: Result<UserInfo, ErrorKind>;
 
@@ -155,15 +157,14 @@ fn main() -> io::Result<()>{
             println!("primary group: {:?}", user.primary_group_id());
             
             
-            setuid(Uid::from_raw(user.uid()));
-            setgid(Gid::from_raw(user.primary_group_id()));
-            initgroups( &CString::new(user_info.username).unwrap(), Gid::from_raw(user.primary_group_id()));
+            setuid(Uid::from_raw(user.uid())).expect("Could not set UID for your user");
+            setgid(Gid::from_raw(user.primary_group_id())).expect("Could not set GID for your user");
+            initgroups(
+                &CString::new(user_info.username).unwrap(),
+                Gid::from_raw(user.primary_group_id())
+            ).expect("Could not assign groups to your user");
 
-
-            match set_current_dir(homedir) {
-                Ok(i) => i,
-                Err(_) => println!("Couldn't set home directory")
-            }
+            set_current_dir(homedir).expect("Couldn't set home directory");
 
             // startx
             let mut child = Command::new("startx").spawn()

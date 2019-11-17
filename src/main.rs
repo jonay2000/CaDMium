@@ -158,6 +158,7 @@ fn main() -> io::Result<()>{
 
 
             setgid(Gid::from_raw(user.primary_group_id())).expect("Could not set GID for your user");
+
             initgroups(
                 &CString::new(user_info.username).unwrap(),
                 Gid::from_raw(user.primary_group_id())
@@ -165,6 +166,8 @@ fn main() -> io::Result<()>{
 
             // No Root :(
             setuid(Uid::from_raw(user.uid())).expect("Could not set UID for your user");
+
+            chvt::chvt(1);
 
             set_current_dir(homedir).expect("Couldn't set home directory");
 

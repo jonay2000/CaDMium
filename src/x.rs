@@ -4,10 +4,8 @@ use std::fs::File;
 use std::fmt::Debug;
 use std::error::Error;
 use rand::Rng;
-use std::process::Command;
-use nix::unistd::access;
-use nix::unistd::AccessFlags;
-use xcb::ConnError::Connection;
+use std::process::{Command, Child};
+use xcb::Connection;
 
 #[derive(Debug)]
 pub enum XError {
@@ -15,6 +13,9 @@ pub enum XError {
     XAuthError,
     NoFreeDisplayError,
     XStartError,
+    DEStartError,
+    XCBConnectionError,
+    NoSHELLError
 }
 
 impl Error for XError {}
@@ -47,6 +48,7 @@ fn get_free_display() -> Result<i32, XError>{
 fn xauth(display: &String, home: &Path) -> Result<(), XError> {
     let xauth_path = home.join(".cdxauth");
 
+    // set the XAUTHORITY environment variable
     env::set_var("XAUTHORITY", &xauth_path);
 
     File::create(xauth_path).map_err(|_| XError::IOError)?;
@@ -60,19 +62,25 @@ fn xauth(display: &String, home: &Path) -> Result<(), XError> {
 }
 
 
-pub fn start_x(tty: u32, home: &Path) -> Result<(), XError> {
+pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
     let display = format!(":{}", get_free_display()?);
-//    env::set_var("XAUTHORITY", &xauth_path);
+    // set the DISPLAY environment variable
+    env::set_var("DISPLAY", &display);
+
+
     xauth(&display, home)?;
 
-    println!("{}", env::var("DISPLAY").expect("no display"));
 
     Command::new("/usr/bin/X")
-        .args(&[display, format!("{}", tty)])
+        .args(&[&display, &format!("{}", tty)])
         .output().map_err(|_| XError::XStartError)?;
 
-//    Connection::connect(None);
+    let c = Connection::connect(Some(&display)).map_err(|_| XError::XCBConnectionError)?;
 
+    let mut de_process = Command::new(env::var("SHELL").map_err(|_| XError::NoSHELLError)?)
+        .arg("-c").arg(include_str!("../res/xsetup.sh")).arg(de).spawn().map_err(|_| XError::DEStartError)?;
+    
+    de_process.wait();
 
     Ok(())
 }

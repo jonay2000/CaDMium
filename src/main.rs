@@ -17,6 +17,7 @@ pub mod x;
 fn main() -> io::Result<()>{
 
     let tty = 2;
+    let de = "bspwm";
 
     // de-hardcode 2
     match chvt::chvt(tty) {
@@ -67,7 +68,13 @@ fn main() -> io::Result<()>{
 
             set_current_dir(&homedir).expect("Couldn't set home directory");
 
-            start_x(tty as u32, Path::new(&homedir)).map_err(|e| ErrorKind::XError(e)).expect("Couldn't start X");
+            start_x(
+                tty as u32,
+                Path::new(&homedir),
+                de
+            ).map_err(|e| ErrorKind::XError(e)).expect("Couldn't start X");
+
+
         }
         _ => {
             loop {}

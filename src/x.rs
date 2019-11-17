@@ -5,7 +5,11 @@ use std::fmt::Debug;
 use std::error::Error;
 use rand::Rng;
 use std::process::{Command, Child};
-use xcb::Connection;
+use xcb::{Connection, ConnError};
+use nix::sys::signal::kill;
+use nix::unistd::Pid;
+use nix::sys::ptrace::cont;
+use nix::errno::Errno;
 
 #[derive(Debug)]
 pub enum XError {
@@ -71,9 +75,35 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
     xauth(&display, home)?;
 
 
-    Command::new("/usr/bin/X")
+    let xorg_process = Command::new("/usr/bin/X")
         .args(&[&display, &format!("{}", tty)])
-        .output().map_err(|_| XError::XStartError)?;
+        .spawn().map_err(|_| XError::XStartError)?;
+
+    // Wait for the process to start running
+    loop {
+        if let Err(e) = kill(Pid::from_raw(xorg_process.id() as i32), None) {
+            match e.as_errno() {
+                Some(e) => match e {
+                    Errno::ESRCH => {
+                        continue;
+                    }
+                    _ => return Err(XError::XCBConnectionError)
+                }
+                None => return Err(XError::XCBConnectionError)
+            }
+        };
+    }
+
+    let c = match Connection::connect(Some(&display)){
+        Ok(c) => c,
+        Err(e) => {
+//            match e {
+//                ConnError::Connection => continue,
+//                _ => return Err(XError::XCBConnectionError)
+//            }
+            return Err(XError::XCBConnectionError)
+        }
+    };
 
     let c = Connection::connect(None).map_err(|_| XError::XCBConnectionError)?;
 

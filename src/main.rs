@@ -6,10 +6,15 @@ use rpassword::read_password;
 use std::error::Error;
 use core::fmt;
 use std::fmt::Debug;
-use nix::unistd::{fork, ForkResult, setuid, setgid, Uid, Gid};
+use nix::unistd::{fork, ForkResult, setuid, setgid, Uid, Gid, chdir, initgroups};
 use std::process::Command;
 use pam_sys::raw::pam_get_user;
 use users::get_user_by_name;
+use std::io::Write;
+use std::thread::sleep;
+use std::time::Duration;
+use std::env::set_current_dir;
+use std::ffi::{CStr, CString};
 
 #[derive(Debug)]
 enum ErrorKind {
@@ -32,9 +37,19 @@ struct UserInfo {
 }
 
 fn simple_get_credentials() -> io::Result<UserInfo> {
+
+    println!("Login:");
+    print!("username: ");
+    io::stdout().flush().ok().expect("Could not flush stdout");
+
+
     let mut username = String::new();
     io::stdin().read_line(&mut username)?;
     username.truncate(username.trim_end().len());
+
+    print!("password (hidden): ");
+    io::stdout().flush().ok().expect("Could not flush stdout");
+
     let password = read_password()?;
 
     Ok(UserInfo {
@@ -107,6 +122,8 @@ fn authenticate() -> Result<UserInfo, ErrorKind>{
 
 fn main() -> io::Result<()>{
 
+    chvt::chvt(2);
+
     let mut auth: Result<UserInfo, ErrorKind>;
 
     loop {
@@ -117,22 +134,40 @@ fn main() -> io::Result<()>{
         }
     }
 
+
     // Safe because we check is_ok()
     let user_info = auth.unwrap();
 
     match fork() {
         Ok(ForkResult::Child) => {
+
             println!("Logged in as: {}", std::env::var("USER").unwrap());
             println!("Current directory: {}", std::env::var("PWD").unwrap());
-            let user= get_user_by_name(&user_info.username).unwrap();
+
+            let homedir = std::env::var("HOME").unwrap();
+            println!("Home directory: {}", homedir);
+
+
+            let user= get_user_by_name(&user_info.username).expect("Couldn't find username");
 
             println!("user: {:?}", user);
-
+            println!("user id: {:?}", user.uid());
+            println!("primary group: {:?}", user.primary_group_id());
+            
+            
             setuid(Uid::from_raw(user.uid()));
             setgid(Gid::from_raw(user.primary_group_id()));
+            initgroups( &CString::new(user_info.username).unwrap(), Gid::from_raw(user.primary_group_id()));
 
-            //exec /bin/bash --login .xinitrc
-            let mut child = Command::new("whoami").spawn().expect("failed to execute child");
+
+            match set_current_dir(homedir) {
+                Ok(i) => i,
+                Err(_) => println!("Couldn't set home directory")
+            }
+
+            // startx
+            let mut child = Command::new("startx").spawn()
+                .expect("failed to execute child");
 
             child.wait().expect("failed to wait on child");
         }

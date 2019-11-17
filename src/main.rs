@@ -119,12 +119,12 @@ fn authenticate() -> Result<UserInfo, ErrorKind>{
 
 fn main() -> io::Result<()>{
 
-    match chvt::chvt(2) {
-        Ok(_) => (),
-        Err(_) => {
-            println!("Could not change console");
-        }
-    };
+//    match chvt::chvt(2) {
+//        Ok(_) => (),
+//        Err(_) => {
+//            println!("Could not change console");
+//        }
+//    };
 
     let mut auth: Result<UserInfo, ErrorKind>;
 
@@ -135,7 +135,6 @@ fn main() -> io::Result<()>{
             break;
         }
     }
-
 
     // Safe because we check is_ok()
     let user_info = auth.unwrap();

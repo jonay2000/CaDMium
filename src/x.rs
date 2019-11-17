@@ -73,10 +73,12 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
 
     xauth(&display, home)?;
 
+    println!("Starting xorg process");
     let xorg_process = Command::new("/usr/bin/X")
         .args(&[&display, &format!("vt{}", tty)])
         .spawn().map_err(|_| XError::XStartError)?;
 
+    println!("Waiting for xorg to start");
     // Wait for the process to start running
     loop {
         if let Err(e) = kill(Pid::from_raw(xorg_process.id() as i32), None) {
@@ -92,6 +94,7 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
         };
     }
 
+    println!("Creating XCB connection");
     let c = match Connection::connect(Some(&display)){
         Ok(c) => c,
         Err(e) => {
@@ -103,7 +106,7 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
         }
     };
 
-    let c = Connection::connect(None).map_err(|_| XError::XCBConnectionError)?;
+    println!("Running DE");
 
     let mut de_process = Command::new(env::var("SHELL").map_err(|_| XError::NoSHELLError)?)
         .arg("-c").arg(include_str!("../res/xsetup.sh")).arg(de).spawn().map_err(|_| XError::DEStartError)?;

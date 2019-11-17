@@ -35,7 +35,7 @@ pub fn mcookie() -> String{
 /// Loops through all displays and finds the first free one.
 fn get_free_display() -> Result<i32, XError>{
     for i in 0..200 {
-        if let Ok(_) = access(Path::new(&format!("/tmp/.X{}-lock", i)), AccessFlags::F_OK) {
+        if !Path::new(&format!("/tmp/.X{}-lock", i)).exists() {
             return Ok(i);
         }
     }

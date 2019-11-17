@@ -167,12 +167,10 @@ fn main() -> io::Result<()>{
             // No Root :(
             setuid(Uid::from_raw(user.uid())).expect("Could not set UID for your user");
 
-            chvt::chvt(1);
-
             set_current_dir(homedir).expect("Couldn't set home directory");
 
-            // startx
-            let mut child = Command::new("startx").spawn()
+            // startx -- :0
+            let mut child = Command::new("startx").arg("-- :0 vt7").spawn()
                 .expect("failed to execute child");
 
             child.wait().expect("failed to wait on child");

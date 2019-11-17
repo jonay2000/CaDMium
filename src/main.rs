@@ -165,7 +165,7 @@ fn main() -> io::Result<()>{
             ).expect("Could not assign groups to your user");
 
             // Get ownership of the TTY
-            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None);
+            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None).unwrap();
 
             // No Root :(
             setuid(Uid::from_raw(user.uid())).expect("Could not set UID for your user");
@@ -173,7 +173,7 @@ fn main() -> io::Result<()>{
             set_current_dir(homedir).expect("Couldn't set home directory");
 
             // startx -- :0
-            let mut child = Command::new("startx").arg("--").arg(":0").arg("vt7").spawn()
+            let mut child = Command::new("startx").arg("--").arg(":1").arg("vt7").spawn()
                 .expect("failed to execute child");
 
             child.wait().expect("failed to wait on child");

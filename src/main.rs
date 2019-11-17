@@ -1,7 +1,7 @@
 use std::io;
 use crate::askpass::UserInfo;
 use crate::error::ErrorKind;
-use nix::unistd::{ForkResult, setgid, Gid, initgroups, setuid, Uid, fork};
+use nix::unistd::{ForkResult, setgid, Gid, initgroups, setuid, Uid, fork, chown};
 use users::get_user_by_name;
 use std::ffi::CString;
 use std::env::set_current_dir;
@@ -55,7 +55,7 @@ fn main() -> io::Result<()>{
             println!("user id: {:?}", user.uid());
             println!("primary group: {:?}", user.primary_group_id());
 
-
+            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None);
 
             initgroups(
                 &CString::new(user_info.username).unwrap(),

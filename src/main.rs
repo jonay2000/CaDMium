@@ -9,6 +9,7 @@ use crate::login::authenticate;
 use crate::x::start_x;
 use std::path::Path;
 use std::env;
+use std::process::Command;
 
 pub mod askpass;
 pub mod error;
@@ -75,6 +76,8 @@ fn main() -> io::Result<()>{
 
             xdg(tty as u32, user.uid());
 
+            Command::new("bash").arg("-c").arg("/etc/locale.conf").output().expect("Couldn't source language");
+
             initgroups(
                 &CString::new(user_info.username).unwrap(),
                 Gid::from_raw(user.primary_group_id())
@@ -88,7 +91,7 @@ fn main() -> io::Result<()>{
             set_current_dir(&homedir).expect("Couldn't set home directory");
 
             start_x(
-                tty as u32,
+                (tty + 1) as u32,
                 Path::new(&homedir),
                 de
             ).map_err(|e| ErrorKind::XError(e)).expect("Couldn't start X");

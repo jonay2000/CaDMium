@@ -26,6 +26,11 @@ fn xdg(tty: u32, uid: u32) {
     env::set_var("XDG_SEAT", "seat0");
 
     env::set_var("XDG_VTNR", format!("{}", tty));
+    env::set_var("XDG_SESSION_ID", "1");
+
+    // temp
+    env::set_var("SHLVL", "0");
+    env::set_var("DBUS_SESSION_BUS_ADDRESS", format!("unix:path=/run/user/{}/bus", uid));
 
     env::set_var("XDG_SESSION_TYPE", "tty");
 }
@@ -71,8 +76,6 @@ fn main() -> io::Result<()>{
             println!("user id: {:?}", user.uid());
             println!("primary group: {:?}", user.primary_group_id());
             println!("shell: {:?}", std::env::var("SHELL").expect("no shell"));
-
-//            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None);
 
             xdg(tty as u32, user.uid());
 

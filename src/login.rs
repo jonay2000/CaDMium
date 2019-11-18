@@ -28,7 +28,7 @@ fn xdg(tty: u32, _uid: u32) {
 pub fn authenticate(tty: u32) -> Result<(UserInfo, LoginManager), ErrorKind>{
     let logind_manager = LoginManager::new().expect("Could not get logind-manager");
 
-    let mut authenticator = Authenticator::with_password("system-auth")
+    let mut authenticator = Authenticator::with_password("login")
         .expect("Failed to init PAM client.");
 
     // block where we inhibit suspend

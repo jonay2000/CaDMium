@@ -30,7 +30,7 @@ fn xdg(tty: u32, uid: u32) {
 
     // temp
     env::set_var("SHLVL", "0");
-    env::set_var("DBUS_SESSION_BUS_ADDRESS", format!("unix:path=/run/user/{}/bus", uid));
+//    env::set_var("DBUS_SESSION_BUS_ADDRESS", format!("unix:path=/run/user/{}/bus", uid));
 
     env::set_var("XDG_SESSION_TYPE", "tty");
 }

@@ -1,41 +1,20 @@
-use std::io;
-use crate::askpass::UserInfo;
 use crate::error::ErrorKind;
-use nix::unistd::{ForkResult, setgid, Gid, initgroups, setuid, Uid, fork, chown};
+use nix::unistd::{ForkResult, setgid, Gid, initgroups, setuid, Uid, fork};
 use users::get_user_by_name;
 use std::ffi::CString;
 use std::env::set_current_dir;
 use crate::login::authenticate;
 use crate::x::start_x;
 use std::path::Path;
-use std::env;
 use std::process::Command;
 
 pub mod askpass;
 pub mod error;
 pub mod login;
 pub mod x;
+pub mod dbus;
 
-fn xdg(tty: u32, uid: u32) {
-    let user = format!("/run/user/{}", uid);
-
-    env::set_var("XDG_RUNTIME_DIR", format!("/run/user/{}", uid));
-    env::set_var("XDG_SESSION_CLASS", "user");
-
-    //TODO: should be seat{display}. might need to move to a place where we actually know the display.
-    env::set_var("XDG_SEAT", "seat0");
-
-    env::set_var("XDG_VTNR", format!("{}", tty));
-    env::set_var("XDG_SESSION_ID", "1");
-
-    // temp
-    env::set_var("SHLVL", "0");
-//    env::set_var("DBUS_SESSION_BUS_ADDRESS", format!("unix:path=/run/user/{}/bus", uid));
-
-    env::set_var("XDG_SESSION_TYPE", "tty");
-}
-
-fn main() -> io::Result<()>{
+fn main() -> Result<(), ErrorKind>{
 
     let tty = 2;
     let de = "bspwm";
@@ -48,18 +27,23 @@ fn main() -> io::Result<()>{
         }
     };
 
-    let mut auth: Result<UserInfo, ErrorKind>;
-
-    loop {
-        auth = authenticate();
-
-        if auth.is_ok() {
-            break;
+    let (user_info, logind_manager) = loop {
+        match authenticate(tty as u32) {
+            Ok(i) => break i,
+            Err(e) => match e {
+                ErrorKind::AuthenticationError => continue,
+                _ => {
+                    println!("Couldn't authenticate: ");
+                    return Err(e);
+                },
+            }
         }
-    }
-
-    // Safe because we check is_ok()
-    let user_info = auth.unwrap();
+    };
+//
+//    if !logind_manager.is_connected() {
+//        println!("Couldn't start DBus: ");
+//        return Err(ErrorKind::DBusError);
+//    }
 
     match fork() {
         Ok(ForkResult::Child) => {
@@ -77,7 +61,7 @@ fn main() -> io::Result<()>{
             println!("primary group: {:?}", user.primary_group_id());
             println!("shell: {:?}", std::env::var("SHELL").expect("no shell"));
 
-            xdg(tty as u32, user.uid());
+
 
             Command::new("bash").arg("-c").arg("/etc/locale.conf").output().expect("Couldn't source language");
 
@@ -93,6 +77,8 @@ fn main() -> io::Result<()>{
 
             set_current_dir(&homedir).expect("Couldn't set home directory");
 
+            dbus::start_dbus();
+
             start_x(
                 (tty + 1) as u32,
                 Path::new(&homedir),
@@ -103,7 +89,6 @@ fn main() -> io::Result<()>{
             loop {}
         }
     }
-
 
     // ask for user / pass
     // authenticate with pam

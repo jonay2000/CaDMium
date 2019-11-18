@@ -9,6 +9,7 @@ pub enum ErrorKind {
     InhibitationError,
     IoError,
     AuthenticationError,
+    DBusError,
     SessionError,
     AskPassError(AskPassError),
     XError(XError),

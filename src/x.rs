@@ -4,11 +4,10 @@ use std::fs::File;
 use std::fmt::Debug;
 use std::error::Error;
 use rand::Rng;
-use std::process::{Command, Child};
+use std::process::Command;
 use xcb::{Connection, ConnError};
 use nix::sys::signal::kill;
 use nix::unistd::Pid;
-use nix::sys::ptrace::cont;
 use nix::errno::Errno;
 use std::io::Read;
 
@@ -75,7 +74,7 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
     xauth(&display, home)?;
 
     println!("{}",  String::from_utf8_lossy(&Command::new("env").output().expect("couldnt execute env").stdout));
-    let input: Option<i32> = std::io::stdin()
+    std::io::stdin()
         .bytes()
         .next()
         .and_then(|result| result.ok())
@@ -88,8 +87,9 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
 
     println!("Waiting for xorg to start");
     // Wait for the process to start running
-    let c = loop {
-        println!("Waiting for X to start");
+    // TODO: close xcb connection
+    let _c = loop {
+//        println!("Waiting for X to start");
 
         if let Err(e) = kill(Pid::from_raw(xorg_process.id() as i32), None) {
             match e.as_errno() {
@@ -110,7 +110,6 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
                     ConnError::Connection => continue,
                     _ => return Err(XError::XCBConnectionError)
                 }
-                return Err(XError::XCBConnectionError)
             }
         }
     };
@@ -122,7 +121,7 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
     let mut de_process = Command::new(env::var("SHELL").map_err(|_| XError::NoSHELLError)?)
         .arg("-c").arg(format!("$@={}", de)).arg(include_str!("../res/xsetup.sh")).spawn().map_err(|_| XError::DEStartError)?;
     
-    de_process.wait();
+    let _ = de_process.wait();
 
     Ok(())
 }

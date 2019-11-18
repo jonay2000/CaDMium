@@ -55,6 +55,8 @@ fn xauth(display: &String, home: &Path) -> Result<(), XError> {
     // set the XAUTHORITY environment variable
     env::set_var("XAUTHORITY", &xauth_path);
 
+    env::set_var("XDG_SESSION_TYPE", "x11");
+
     File::create(xauth_path).map_err(|_| XError::IOError)?;
     
     // use `xauth` to generate the xauthority file for us

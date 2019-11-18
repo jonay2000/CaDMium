@@ -8,11 +8,24 @@ use std::env::set_current_dir;
 use crate::login::authenticate;
 use crate::x::start_x;
 use std::path::Path;
+use std::env;
 
 pub mod askpass;
 pub mod error;
 pub mod login;
 pub mod x;
+
+fn xdg(tty: String, uid: u32) {
+    let user = format!("/run/user/{}", uid);
+
+    env::set_var("XDG_RUNTIME_DIR", &user);
+    env::set_var("XDG_SESSION_CLASS", &user);
+
+    //TODO: should be seat{display}. might need to move to a place where we actually know the display.
+    env::set_var("XDG_SEAT", "seat0");
+
+    env::set_var("XDG_VTNR", tty);
+}
 
 fn main() -> io::Result<()>{
 
@@ -56,6 +69,8 @@ fn main() -> io::Result<()>{
             println!("primary group: {:?}", user.primary_group_id());
 
 //            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None);
+
+            xdg(format!("vt{}", tty), user.uid());
 
             initgroups(
                 &CString::new(user_info.username).unwrap(),

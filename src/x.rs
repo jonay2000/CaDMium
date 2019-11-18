@@ -10,6 +10,7 @@ use nix::sys::signal::kill;
 use nix::unistd::Pid;
 use nix::sys::ptrace::cont;
 use nix::errno::Errno;
+use std::io::Read;
 
 #[derive(Debug)]
 pub enum XError {
@@ -55,8 +56,6 @@ fn xauth(display: &String, home: &Path) -> Result<(), XError> {
     // set the XAUTHORITY environment variable
     env::set_var("XAUTHORITY", &xauth_path);
 
-    env::set_var("XDG_SESSION_TYPE", "x11");
-
     File::create(xauth_path).map_err(|_| XError::IOError)?;
     
     // use `xauth` to generate the xauthority file for us
@@ -74,6 +73,13 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
     env::set_var("DISPLAY", &display);
 
     xauth(&display, home)?;
+
+    println!("{}",  String::from_utf8_lossy(&Command::new("env").output().expect("couldnt execute env").stdout));
+    let input: Option<i32> = std::io::stdin()
+        .bytes()
+        .next()
+        .and_then(|result| result.ok())
+        .map(|byte| byte as i32);
 
     println!("Starting xorg process");
     let xorg_process = Command::new("/usr/bin/X")

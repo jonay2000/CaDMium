@@ -15,16 +15,18 @@ pub mod error;
 pub mod login;
 pub mod x;
 
-fn xdg(tty: String, uid: u32) {
+fn xdg(tty: u32, uid: u32) {
     let user = format!("/run/user/{}", uid);
 
-    env::set_var("XDG_RUNTIME_DIR", &user);
-    env::set_var("XDG_SESSION_CLASS", &user);
+    env::set_var("XDG_RUNTIME_DIR", format!("/run/user/{}", uid));
+    env::set_var("XDG_SESSION_CLASS", "user");
 
     //TODO: should be seat{display}. might need to move to a place where we actually know the display.
     env::set_var("XDG_SEAT", "seat0");
 
-    env::set_var("XDG_VTNR", tty);
+    env::set_var("XDG_VTNR", format!("{}", tty));
+
+    env::set_var("XDG_SESSION_TYPE", "tty");
 }
 
 fn main() -> io::Result<()>{
@@ -67,10 +69,11 @@ fn main() -> io::Result<()>{
             println!("user: {:?}", user);
             println!("user id: {:?}", user.uid());
             println!("primary group: {:?}", user.primary_group_id());
+            println!("shell: {:?}", std::env::var("SHELL").expect("no shell"));
 
 //            chown("/dev/tty2", Some(Uid::from_raw(user.uid())), None);
 
-            xdg(format!("vt{}", tty), user.uid());
+            xdg(tty as u32, user.uid());
 
             initgroups(
                 &CString::new(user_info.username).unwrap(),

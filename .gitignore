@@ -148,7 +148,7 @@ modules.xml
 # will have compiled files and executables
 /target/
 
-# Remove Cargo.lock from gitignore if creating an executable, leave it for libraries
+# Remove Cargo.lock from gitignore if creating an executable, leview xz file linuxave it for libraries
 # More information here https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html
 Cargo.lock
 
@@ -176,3 +176,8 @@ tags
 [._]*.un~
 
 # End of https://www.gitignore.io/api/vim,rust,floobits,clion+all,intellij+all
+
+
+## PKGBUILD creation
+/cadmium-*
+pkg/

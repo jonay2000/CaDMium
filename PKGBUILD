@@ -7,7 +7,7 @@ makedepends=('cargo')
 depends=('pam' 'libxcb' 'dbus')
 arch=('i686' 'x86_64' 'armv6h' 'armv7h')
 url=https://github.com/jonay2000/cadmium
-license=('wtfpl')
+license=('MIT')
 
 build() {
     cargo build --release

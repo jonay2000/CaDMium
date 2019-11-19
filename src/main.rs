@@ -15,11 +15,15 @@ pub mod error;
 pub mod login;
 pub mod x;
 pub mod dbus;
+pub mod config;
 
-fn main() -> Result<(), ErrorKind>{
-
+fn main() -> Result<(), ErrorKind> {
+    let config = config::get_config();
     let tty = 2;
-    let de = "bspwm";
+    let de = match config.get("de") {
+        Some(x) => x,
+        None => "bspwm"
+    };
 
     // de-hardcode 2
     if chvt::chvt(tty).is_err() {
@@ -35,7 +39,7 @@ fn main() -> Result<(), ErrorKind>{
                 _ => {
                     println!("Couldn't authenticate: ");
                     return Err(e);
-                },
+                }
             }
         }
     };
@@ -49,7 +53,7 @@ fn main() -> Result<(), ErrorKind>{
         Ok(ForkResult::Child) => {
 
             // Get some user info
-            let user= get_user_by_name(&user_info.username).expect("Couldn't find username");
+            let user = get_user_by_name(&user_info.username).expect("Couldn't find username");
             let homedir = user.home_dir();
 
             // Print some debugging info from ENV
@@ -69,7 +73,7 @@ fn main() -> Result<(), ErrorKind>{
 
             initgroups(
                 &CString::new(user_info.username).unwrap(),
-                Gid::from_raw(user.primary_group_id())
+                Gid::from_raw(user.primary_group_id()),
             ).expect("Could not init groups for your user");
 
             setgid(Gid::from_raw(user.primary_group_id())).expect("Could not set GID for the process");
@@ -84,7 +88,7 @@ fn main() -> Result<(), ErrorKind>{
             start_x(
                 (tty + 1) as u32, // Start X on tty+1 so that we keep logs here
                 Path::new(&homedir),
-                de
+                de,
             ).expect("Couldn't start X");
 
             // If X closes back to login?

@@ -1,0 +1,2 @@
+# Add this file to /etc/cadmium.d if you use plasma as your de
+de = "startplasma-x11"

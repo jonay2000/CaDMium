@@ -8,6 +8,7 @@ depends=('pam' 'libxcb' 'dbus')
 arch=('i686' 'x86_64' 'armv6h' 'armv7h')
 url=https://github.com/jonay2000/cadmium
 license=('MIT')
+install=cadmium.install
 
 build() {
     cargo build --release
@@ -15,6 +16,7 @@ build() {
 
 package() {
     cd ..
-    install -Dm755 "target/release/cadmium" "${pkgdir}/usr/bin/cadmium"
+    install -Dm 755 target/release/${pkgname} -t "${pkgdir}/usr/bin"
     install -Dm644 "cadmium.service" "${pkgdir}/usr/lib/systemd/system/cadmium.service"
+    install -Dm644 "config/cadmium.toml" "${pkgdir}/etc/cadmium.toml"
 }

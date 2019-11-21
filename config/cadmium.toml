@@ -1,1 +1,8 @@
+# Desktop Environment
 de = "bspwm"
+
+#LogTTY
+logtty = 2
+
+# Display TTY, where the DE is loaded
+displaytty = 3

@@ -18,21 +18,17 @@ pub mod dbus;
 pub mod config;
 
 fn main() -> Result<(), ErrorKind> {
-    let config = config::get_config();
-    let tty = 2;
-    let de = match config.get("de") {
-        Some(x) => x,
-        None => "bspwm"
-    };
+    let config = config::config_from_file("/etc/cadmium.toml")?;
+
 
     // de-hardcode 2
-    if chvt::chvt(tty).is_err() {
+    if chvt::chvt(config.logtty as i32).is_err() {
         println!("Could not change console");
     };
 
     // Loop assignment _gasp_
     let (user_info, logind_manager) = loop {
-        match authenticate(tty as u32) {
+        match authenticate(config.logtty as u32) {
             Ok(i) => break i,
             Err(e) => match e {
                 ErrorKind::AuthenticationError => continue,
@@ -86,9 +82,9 @@ fn main() -> Result<(), ErrorKind> {
             dbus::start_dbus();
 
             start_x(
-                (tty + 1) as u32, // Start X on tty+1 so that we keep logs here
+                config.displaytty as u32, // Start X on tty+1 so that we keep logs here
                 Path::new(&homedir),
-                de,
+                config.de.as_str(),
             ).expect("Couldn't start X");
 
             // If X closes back to login?

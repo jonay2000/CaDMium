@@ -3,6 +3,7 @@ use std::error::Error;
 use crate::askpass::AskPassError;
 use fmt::Debug;
 use crate::x::XError;
+use toml::de::Error as TomlError;
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -12,6 +13,7 @@ pub enum ErrorKind {
     DBusError,
     SessionError,
     ForkFailed,
+    ConfigLoadError(TomlError),
     AskPassError(AskPassError),
     XError(XError),
 

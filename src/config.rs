@@ -13,7 +13,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            de: String::from("bspwm"),
+            de: "bspwm".into(),
             logtty: 2,
             displaytty: 3,
         }
@@ -21,9 +21,6 @@ impl Default for Config {
 }
 
 pub fn config_from_file(file: &str) -> Result<Config, ErrorKind> {
-    let config = match std::fs::read_to_string(file) {
-        Ok(t) => t,
-        Err(_) => String::from("")
-    };
-    toml::from_str::<Config>(config.as_str()).map_err(|err| ErrorKind::ConfigLoadError(err))
+    let config= std::fs::read_to_string(file).unwrap_or(String::new());
+    toml::from_str(config.as_str()).map_err(|err| ErrorKind::ConfigLoadError(err))
 }

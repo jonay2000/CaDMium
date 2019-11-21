@@ -84,7 +84,7 @@ fn main() -> Result<(), ErrorKind> {
             start_x(
                 config.displaytty as u32, // Start X on tty+1 so that we keep logs here
                 Path::new(&homedir),
-                config.de.as_str(),
+                &config.de,
             ).expect("Couldn't start X");
 
             // If X closes back to login?

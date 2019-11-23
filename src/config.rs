@@ -21,5 +21,5 @@ impl Default for Config {
 
 pub fn config_from_file(file: &str) -> Result<Config, ErrorKind> {
     let config = std::fs::read_to_string(file).unwrap_or_default();
-    toml::from_str(config.as_str()).map_err(ErrorKind::ConfigLoadError )
+    toml::from_str(config.as_str()).map_err(ErrorKind::ConfigLoadError)
 }

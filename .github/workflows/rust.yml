@@ -16,7 +16,12 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     <<: *deps
-    steps: 
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install libdbus-glib-1-dev libpam0g-dev -y
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
@@ -30,8 +35,12 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
-    <<: *deps
     steps:
+      - uses: actions/checkout@v1
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install libdbus-glib-1-dev libpam0g-dev -y
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
@@ -45,8 +54,12 @@ jobs:
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
-    <<: *deps
     steps:
+      - uses: actions/checkout@v1
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install libdbus-glib-1-dev libpam0g-dev -y
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
@@ -62,8 +75,12 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
-    <<: *deps
     steps:
+      - uses: actions/checkout@v1
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install libdbus-glib-1-dev libpam0g-dev -y
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:

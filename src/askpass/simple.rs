@@ -1,14 +1,12 @@
 use crate::askpass::UserInfo;
+use rpassword::read_password;
 use std::io;
 use std::io::Write;
-use rpassword::read_password;
 
 pub fn simple_get_credentials() -> io::Result<UserInfo> {
-
     println!("Login:");
     print!("username: ");
     io::stdout().flush().expect("Could not flush stdout");
-
 
     let mut username = String::new();
     io::stdin().read_line(&mut username)?;
@@ -19,8 +17,5 @@ pub fn simple_get_credentials() -> io::Result<UserInfo> {
 
     let password = read_password()?;
 
-    Ok(UserInfo {
-        username,
-        password
-    })
+    Ok(UserInfo { username, password })
 }

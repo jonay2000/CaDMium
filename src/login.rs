@@ -1,11 +1,11 @@
+use crate::askpass::simple::simple_get_credentials;
 use crate::askpass::UserInfo;
 use crate::error::ErrorKind;
-use pam::pam_sys::PamReturnCode;
-use crate::askpass::simple::simple_get_credentials;
 use logind_dbus::LoginManager;
+use pam::pam_sys::PamReturnCode;
 use pam::Authenticator;
-use users::get_user_by_name;
 use std::env;
+use users::get_user_by_name;
 
 fn xdg(tty: u32, _uid: u32) {
     env::set_var("XDG_SESSION_CLASS", "greeter");
@@ -23,72 +23,77 @@ fn xdg(tty: u32, _uid: u32) {
     env::set_var("XDG_SESSION_TYPE", "tty");
 }
 
-pub fn authenticate(tty: u32) -> Result<(UserInfo, LoginManager), ErrorKind>{
+pub fn authenticate(tty: u32) -> Result<(UserInfo, LoginManager), ErrorKind> {
     let logind_manager = LoginManager::new().expect("Could not get logind-manager");
 
-    let mut authenticator = Authenticator::with_password("login")
-        .expect("Failed to init PAM client.");
+    let mut authenticator =
+        Authenticator::with_password("login").expect("Failed to init PAM client.");
 
     // block where we inhibit suspend
-    let login_info= {
-        let _suspend_lock = logind_manager.connect()
+    let login_info = {
+        let _suspend_lock = logind_manager
+            .connect()
             .inhibit_suspend("Cadmium", "login")
             .map_err(|_| ErrorKind::InhibitationError)?;
 
         // TODO: change to generic get credentials
         let login_info = simple_get_credentials().map_err(|_| ErrorKind::IoError)?;
 
-        let user= get_user_by_name(&login_info.username).expect("Couldn't find username");
+        let user = get_user_by_name(&login_info.username).expect("Couldn't find username");
         xdg(tty as u32, user.uid());
 
-        authenticator.handler_mut().set_credentials(login_info.username.clone(), login_info.password);
+        authenticator
+            .handler_mut()
+            .set_credentials(login_info.username.clone(), login_info.password);
 
         if let Err(e) = authenticator.authenticate() {
-                if e.to_string() == PamReturnCode::PERM_DENIED.to_string() {
-                    println!("Permission denied.");
-                } else if e.to_string() == PamReturnCode::AUTH_ERR.to_string() {
-                    #[cfg(debug_assertions)]
-                    dbg!("AUTH_ERR");
+            if e.to_string() == PamReturnCode::PERM_DENIED.to_string() {
+                println!("Permission denied.");
+            } else if e.to_string() == PamReturnCode::AUTH_ERR.to_string() {
+                #[cfg(debug_assertions)]
+                dbg!("AUTH_ERR");
 
-                    println!("Authentication error.");
-                } else if e.to_string() == PamReturnCode::USER_UNKNOWN.to_string() {
-                    #[cfg(debug_assertions)]
-                    dbg!("USER_UNKNOWN");
+                println!("Authentication error.");
+            } else if e.to_string() == PamReturnCode::USER_UNKNOWN.to_string() {
+                #[cfg(debug_assertions)]
+                dbg!("USER_UNKNOWN");
 
-                    println!("Authentication error.");
-                } else if e.to_string() == PamReturnCode::MAXTRIES.to_string() {
-                    println!("Maximum login attempts reached.");
-                } else if e.to_string() == PamReturnCode::CRED_UNAVAIL.to_string() {
-                    println!("Underlying authentication service can not retrieve user credentials unavailable.");
-                } else if e.to_string() == PamReturnCode::ACCT_EXPIRED.to_string() {
-                    println!("Account expired");
-                } else if e.to_string() == PamReturnCode::CRED_EXPIRED.to_string() {
-                    println!("Account  expired");
-                } else if e.to_string() == PamReturnCode::TRY_AGAIN.to_string() {
-                    println!("PAM fucked up, please try again");
-                } else if e.to_string() == PamReturnCode::ABORT.to_string() {
-                    println!("user's authentication token has expired");
-                } else if e.to_string() == PamReturnCode::INCOMPLETE.to_string() {
-                    println!("We fucked up, please try again");
-                } else {
-                    println!("A PAM error occurred: {}", e);
-                }
+                println!("Authentication error.");
+            } else if e.to_string() == PamReturnCode::MAXTRIES.to_string() {
+                println!("Maximum login attempts reached.");
+            } else if e.to_string() == PamReturnCode::CRED_UNAVAIL.to_string() {
+                println!("Underlying authentication service can not retrieve user credentials unavailable.");
+            } else if e.to_string() == PamReturnCode::ACCT_EXPIRED.to_string() {
+                println!("Account expired");
+            } else if e.to_string() == PamReturnCode::CRED_EXPIRED.to_string() {
+                println!("Account  expired");
+            } else if e.to_string() == PamReturnCode::TRY_AGAIN.to_string() {
+                println!("PAM fucked up, please try again");
+            } else if e.to_string() == PamReturnCode::ABORT.to_string() {
+                println!("user's authentication token has expired");
+            } else if e.to_string() == PamReturnCode::INCOMPLETE.to_string() {
+                println!("We fucked up, please try again");
+            } else {
+                println!("A PAM error occurred: {}", e);
+            }
 
-                return Err(ErrorKind::AuthenticationError)
+            return Err(ErrorKind::AuthenticationError);
         };
 
-//        logind_manager.register().map_err(|_| ErrorKind::DBusError)?;
+        // logind_manager.register().map_err(|_| ErrorKind::DBusError)?;
 
         (
-            UserInfo{
+            UserInfo {
                 username: login_info.username,
-                password: String::new()
+                password: String::new(),
             },
-            logind_manager
+            logind_manager,
         )
     };
 
-    authenticator.open_session().map_err(|_| ErrorKind::SessionError)?;
+    authenticator
+        .open_session()
+        .map_err(|_| ErrorKind::SessionError)?;
 
     Ok(login_info)
 }

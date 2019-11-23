@@ -1,13 +1,11 @@
-use std::error::Error;
 use core::fmt;
 use fmt::Debug;
+use std::error::Error;
 
 pub mod simple;
 
 #[derive(Debug)]
-pub enum AskPassError {
-
-}
+pub enum AskPassError {}
 impl Error for AskPassError {}
 impl fmt::Display for AskPassError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -19,4 +17,3 @@ pub struct UserInfo {
     pub username: String,
     pub password: String,
 }
-

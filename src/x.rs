@@ -1,15 +1,15 @@
-use std::{env, fmt};
-use std::path::Path;
-use std::fs::File;
-use std::fmt::Debug;
-use std::error::Error;
-use rand::Rng;
-use std::process::Command;
-use xcb::{Connection, ConnError};
+use nix::errno::Errno;
 use nix::sys::signal::kill;
 use nix::unistd::Pid;
-use nix::errno::Errno;
+use rand::Rng;
+use std::error::Error;
+use std::fmt::Debug;
+use std::fs::File;
 use std::io::Read;
+use std::path::Path;
+use std::process::Command;
+use std::{env, fmt};
+use xcb::{ConnError, Connection};
 
 #[derive(Debug)]
 pub enum XError {
@@ -19,7 +19,7 @@ pub enum XError {
     XStartError,
     DEStartError,
     XCBConnectionError,
-    NoSHELLError
+    NoSHELLError,
 }
 
 impl Error for XError {}
@@ -29,8 +29,7 @@ impl fmt::Display for XError {
     }
 }
 
-
-pub fn mcookie() -> String{
+pub fn mcookie() -> String {
     let mut rng = rand::thread_rng();
 
     let cookie: u128 = rng.gen();
@@ -38,7 +37,7 @@ pub fn mcookie() -> String{
 }
 
 /// Loops through all displays and finds the first free one.
-fn get_free_display() -> Result<i32, XError>{
+fn get_free_display() -> Result<i32, XError> {
     for i in 0..200 {
         if !Path::new(&format!("/tmp/.X{}-lock", i)).exists() {
             return Ok(i);
@@ -56,15 +55,15 @@ fn xauth(display: &str, home: &Path) -> Result<(), XError> {
     env::set_var("XAUTHORITY", &xauth_path);
 
     File::create(xauth_path).map_err(|_| XError::IOError)?;
-    
+
     // use `xauth` to generate the xauthority file for us
     Command::new("/usr/bin/xauth")
         .args(&["add", display, ".", &mcookie()])
-        .output().map_err(|_| XError::XAuthError)?;
+        .output()
+        .map_err(|_| XError::XAuthError)?;
 
     Ok(())
 }
-
 
 pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
     let display = format!(":{}", get_free_display()?);
@@ -73,7 +72,15 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
 
     xauth(&display, home)?;
 
-    println!("{}",  String::from_utf8_lossy(&Command::new("env").output().expect("couldnt execute env").stdout));
+    println!(
+        "{}",
+        String::from_utf8_lossy(
+            &Command::new("env")
+                .output()
+                .expect("couldnt execute env")
+                .stdout
+        )
+    );
     std::io::stdin()
         .bytes()
         .next()
@@ -83,13 +90,14 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
     println!("Starting xorg process");
     let xorg_process = Command::new("/usr/bin/X")
         .args(&[&display, &format!("vt{}", tty)])
-        .spawn().map_err(|_| XError::XStartError)?;
+        .spawn()
+        .map_err(|_| XError::XStartError)?;
 
     println!("Waiting for xorg to start");
     // Wait for the process to start running
     // TODO: close xcb connection
     let _c = loop {
-//        println!("Waiting for X to start");
+        //        println!("Waiting for X to start");
 
         if let Err(e) = kill(Pid::from_raw(xorg_process.id() as i32), None) {
             match e.as_errno() {
@@ -97,20 +105,18 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
                     Errno::ESRCH => {
                         continue;
                     }
-                    _ => return Err(XError::XCBConnectionError)
-                }
-                None => return Err(XError::XCBConnectionError)
+                    _ => return Err(XError::XCBConnectionError),
+                },
+                None => return Err(XError::XCBConnectionError),
             }
         };
 
         match Connection::connect(Some(&display)) {
             Ok(c) => break c,
-            Err(e) => {
-                match e {
-                    ConnError::Connection => continue,
-                    _ => return Err(XError::XCBConnectionError)
-                }
-            }
+            Err(e) => match e {
+                ConnError::Connection => continue,
+                _ => return Err(XError::XCBConnectionError),
+            },
         }
     };
 
@@ -119,14 +125,17 @@ pub fn start_x(tty: u32, home: &Path, de: &str) -> Result<(), XError> {
     println!("Running DE");
 
     let mut de_process = Command::new(env::var("SHELL").map_err(|_| XError::NoSHELLError)?)
-        .arg("-c").arg(format!("$@={}", de)).arg(include_str!("../res/xsetup.sh")).spawn().map_err(|_| XError::DEStartError)?;
-    
+        .arg("-c")
+        .arg(format!("$@={}", de))
+        .arg(include_str!("../res/xsetup.sh"))
+        .spawn()
+        .map_err(|_| XError::DEStartError)?;
+
     let _ = de_process.wait();
 
     // Back to login screen
     Ok(())
 }
-
 
 #[cfg(test)]
 mod test {

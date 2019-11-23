@@ -2,20 +2,11 @@ on: [push, pull_request]
 
 name: Continuous integration
 
-.deps: &deps
-  steps: 
-    - uses: actions/checkout@v1
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install libdbus-glib-1-dev libpam0g-dev -y
 
 jobs:
-   
   check:
     name: Check
     runs-on: ubuntu-latest
-    <<: *deps
     steps:
       - uses: actions/checkout@v1
       - name: Install Dependencies

@@ -26,7 +26,7 @@ fn main() -> Result<(), ErrorKind> {
     };
 
     // Loop assignment _gasp_
-    let (user_info, logind_manager) = loop {
+    let (user_info, _logind_manager) = loop {
         match authenticate(config.logtty as u32) {
             Ok(i) => break i,
             Err(e) => match e {

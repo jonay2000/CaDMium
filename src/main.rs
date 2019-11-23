@@ -99,7 +99,7 @@ fn main() -> Result<(), ErrorKind> {
 
             // If X closes back to login?
         }
-        Ok(ForkResult::Parent { child }) => {
+        Ok(ForkResult::Parent { child: _child }) => {
             // The parent process where we should handle reboot, lock, etc signals
             loop {
                 std::thread::sleep(Duration::from_secs(1)) // So that the loop doesn't get optimized away
